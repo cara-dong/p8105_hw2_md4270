@@ -1,0 +1,11 @@
+---
+title: "p8105_hw2_md4270"
+author: "Manye Dong"
+date: "2023-09-30"
+output: github_document
+---
+## Problem 1
+```{r}
+
+```
+

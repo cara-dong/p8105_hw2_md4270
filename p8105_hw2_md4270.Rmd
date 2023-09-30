@@ -7,6 +7,7 @@ output: github_document
 ```{r message=FALSE, results='hide'}
 library(tidyverse)
 library(readr)
+library(readxl)
 ```
 
 ## Problem 1
@@ -64,7 +65,20 @@ unemployment =
 
 head(unemployment)
 ```
-Write a short paragraph about these datasets. Explain briefly what each dataset contained, and describe the resulting dataset (e.g. give the dimension, range of years, and names of key variables).
+```{r}
+# merge the three datasets
+joined = left_join(pols_month, snp) |>
+  left_join(x = _, y = unemployment)
+joined
+```
+Write a short paragraph about these datasets. Explain briefly what each dataset contained, and describe the resulting dataset (e.g. give the dimension, range of years, and names of key variables):
+
+822 rows, 11 columns (without month_num and mon_abb, which is included in the answer key). 
 
 ## Problem 2
 ### Mr. Trash Wheel
+```{r}
+trash = read_excel("202207 Trash Wheel Collection Data.xlsx")
+head(trash)
+```
+

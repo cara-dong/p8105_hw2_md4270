@@ -78,7 +78,52 @@ Write a short paragraph about these datasets. Explain briefly what each dataset 
 ## Problem 2
 ### Mr. Trash Wheel
 ```{r}
-trash = read_excel("202207 Trash Wheel Collection Data.xlsx")
-head(trash)
-```
+mister_trash = 
+  read_excel("202207 Trash Wheel Collection Data.xlsx", 
+             sheet = "Mr. Trash Wheel", range = "A2:N549") |>
+  janitor::clean_names() |>
+  separate(date, sep ="-", into = c("year", "month", "day")) |>
+  mutate(homes_powered = (weight_tons * 500) / 30, 
+         month = month.abb[as.numeric(month)],
+         wheel = "mister")
 
+head(mister_trash)
+```
+```{r}
+# load and clean the Professor Trash Wheel
+prof_trash = 
+  read_excel("202207 Trash Wheel Collection Data.xlsx", 
+             sheet = "Professor Trash Wheel", range = "A2:M96") |>
+  janitor::clean_names() |>
+  separate(date, sep ="-", into = c("year", "month", "day")) |>
+  mutate(homes_powered = (weight_tons * 500) / 30, 
+         month = month.abb[as.numeric(month)],
+         wheel = "professor")
+
+head(prof_trash)
+```
+```{r}
+# load and clean the Professor Trash Wheel
+gwynnda_trash = 
+  read_excel("202207 Trash Wheel Collection Data.xlsx", 
+             sheet = "Gwynnda Trash Wheel", range = "A2:J108") |>
+  janitor::clean_names() |>
+  separate(date, sep ="-", into = c("year", "month", "day")) |>
+  mutate(homes_powered = (weight_tons * 500) / 30, 
+         month = month.abb[as.numeric(month)],
+         wheel = "gwynnda")
+
+head(gwynnda_trash)
+```
+Now we combine those three datasets:
+```{r}
+trash_wheels =
+  bind_rows(mister_trash, prof_trash, gwynnda_trash) |>
+  janitor::clean_names()
+
+head(trash_wheels)
+```
+Description:
+
+## Problem 3
+### Observational Study

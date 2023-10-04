@@ -73,7 +73,8 @@ joined
 ```
 Write a short paragraph about these datasets. Explain briefly what each dataset contained, and describe the resulting dataset (e.g. give the dimension, range of years, and names of key variables):
 
-822 rows, 11 columns (without month_num and mon_abb, which is included in the answer key). 
+The resulting dataset contains `r nrow(joined)` rows and `r ncol(joined)` columns. The range of the year goes from `r min(joined %>% pull(year))` to `r max(joined %>% pull(year))`.
+
 
 ## Problem 2
 ### Mr. Trash Wheel
@@ -123,11 +124,85 @@ trash_wheels =
 
 tail(trash_wheels)
 ```
-Description:
+* There are `r nrow(trash_wheels)` rows/observations in the resulting dataset. 
+
+* Key variables include dumpster id, year-month-day as the time of the record for the 
+
+* The total weight of trash collected by Professor Trash Wheel is `r sum(prof_trash %>% pull(weight_tons))` in tons.
+
+```{r results='hide'}
+filtered_gywnnda =  
+  gwynnda_trash |>
+  select(year, month, cigarette_butts) |>
+  filter(year=="2021", month=="Jul")
+
+head(filtered_gywnnda)
+```
+* The total number of cigarette butts collected by Gwynnda in July of 2021 is `r sum(filtered_gywnnda$cigarette_butts)` (16300).
+
 
 ## Problem 3
-### Observational Study
+### Baseline Dataset
+```{r message=FALSE}
+MCI_baseline = read_csv("MCI_baseline.csv", skip=1)
+```
+```{r warning=FALSE}
+MCI_cleaned = 
+  MCI_baseline |>
+  janitor::clean_names() |>
+  mutate(sex = ifelse(sex==0, "Female", "Male"), 
+         apoe4 = ifelse(apoe4==0, "Non-carrier", "Carrier"),
+         age_at_onset = as.numeric(age_at_onset)) |>
+  filter(age_at_onset != "NA")
+
+head(MCI_cleaned)
+```
+
+* I used "skip=1" parameter when importing data to exclude the first row of the because it will mess up with the column names one row below. 
+
+* Relevant features of the dataset include current age of participants, their gender, education in years, and the age at onset of MCI in decimal form after data cleaning.
+
+* There were originally `r nrow(MCI_baseline)` participants recruited, of these `r nrow(MCI_cleaned)` develop MCI the follow-up period. 
+
+* The average baseline age is `r mean(MCI_cleaned %>% pull(age_at_onset))`.
+
+```{r}
+# Check the proportion of women who are APOE4 carriers
+MCI_women = 
+  MCI_cleaned |>
+  filter(sex=="Female")
+
+MCI_women_carrier = 
+  MCI_cleaned |>
+  filter(sex=="Female", apoe4=="Carrier")
+```
+
+* `r 100 * nrow(MCI_women_carrier) / nrow(MCI_women)`% of women in the study are APOE4 carriers.
+
+### Longitudinal Study
+```{r}
+amyloid =
+  read_csv("mci_amyloid.csv", skip = 1) |>
+  janitor::clean_names()
+
+head(amyloid)
+```
+Here, I also used "skip=1" parameter to exclude the first row because it is not the column name we want. Key features include 
+
+Now we check whether some participants appear in only the baseline or amyloid datasets, and comment on your findings. 
 ```{r}
 
 ```
 
+Combine the demographic and biomarker datasets so that only participants who appear in both datasets are retained, and briefly describe the resulting dataset
+```{r}
+MCI_df = inner_join(MCI_cleaned, amyloid, by = c("id" = "study_id"))
+
+head(MCI_df)
+```
+
+
+Export the result as a CSV to your data directory.
+```{r save_csv, message = FALSE}
+write.csv(MCI_df, file = "MCI_df.csv")
+```

@@ -191,18 +191,20 @@ Here, I also used "skip=1" parameter to exclude the first row because it is not 
 
 Now we check whether some participants appear in only the baseline or amyloid datasets, and comment on your findings. 
 ```{r}
-
+baseline_id = MCI_cleaned |> pull(id)
+amyloid_id = amyloid |> pull(study_id)
 ```
+So, yes, there are many participants who appear in only the amyloid dataset, and a lot only appear in the baseline dataset.
 
-Combine the demographic and biomarker datasets so that only participants who appear in both datasets are retained, and briefly describe the resulting dataset
+Now, we combine the demographic and biomarker datasets so that only participants who appear in both datasets are retained:
 ```{r}
 MCI_df = inner_join(MCI_cleaned, amyloid, by = c("id" = "study_id"))
 
 head(MCI_df)
 ```
+The resulting dataset contains `r nrow(MCI_df)` rows/observations and `r ncol(MCI_df)` columns. Key features include the study id for each participant, their current age, gender, education level in years and their age at the onset of MCI. The rest columns are measurements of biomarkers amyloid, from baseline level to the levels after different time intervals across the study.
 
-
-Export the result as a CSV to your data directory.
+Finally, we export the result as a CSV to current data directory:
 ```{r save_csv, message = FALSE}
 write.csv(MCI_df, file = "MCI_df.csv")
 ```

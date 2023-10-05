@@ -11,9 +11,8 @@ library(readxl)
 ```
 
 ## Problem 1
-### clean pols_month dataset
+### Clean pols_month dataset
 ```{r message=FALSE}
-# clean snp dataset
 pols_month = 
   read_csv("pols-month.csv") |>
   janitor::clean_names() |>
@@ -26,7 +25,7 @@ pols_month =
 head(pols_month)
 ```
 
-### clean snp dataset
+### Clean snp dataset
 ```{r message=FALSE}
 snp = 
   read_csv("snp.csv") |>
@@ -47,7 +46,7 @@ unemployment =
   pivot_longer(
     jan:dec,
     names_to = "month", 
-    values_to = "umployment_percent") |>
+    values_to = "unemployment_percent") |>
   mutate(year = as.numeric(year), 
          month = recode(month, 
                    "jan" = "January", 
@@ -65,19 +64,25 @@ unemployment =
 
 head(unemployment)
 ```
-```{r}
-# merge the three datasets
-joined = left_join(pols_month, snp) |>
+Next, we merge the three datasets:
+```{r message=FALSE}
+joined = 
+  left_join(pols_month, snp) |>
   left_join(x = _, y = unemployment)
-joined
-```
-Write a short paragraph about these datasets. Explain briefly what each dataset contained, and describe the resulting dataset (e.g. give the dimension, range of years, and names of key variables):
 
-The resulting dataset contains `r nrow(joined)` rows and `r ncol(joined)` columns. The range of the year goes from `r min(joined %>% pull(year))` to `r max(joined %>% pull(year))`.
+head(joined)
+```
+The pols_month data contains `r nrow(pols_month)` rows and `r ncol(pols_month)` columns. The range of the year goes from `r min(pols_month %>% pull(year))` to `r max(pols_month %>% pull(year))`. Key variables include the number of people in both parties in senate, representatives and government, as well as the party of the president in the corresponding date.
+
+The snp data contains `r nrow(snp)` rows and `r ncol(snp)` features. The range of the year goes from `r min(pols_month %>% pull(year))` to `r max(pols_month %>% pull(year))`. Key variables include the closing values of the S&P stock index on the associated date.
+
+The unemployement data contains `r nrow(unemployment)` rows and `r ncol(unemployment)` features. The range of year goes from `r min(unemployment %>% pull(year))` to `r max(unemployment %>% pull(year))`. Key variables include the unemployment_percent for the corresponding year.
+
+The resulting dataset contains `r nrow(joined)` rows and `r ncol(joined)` columns. The range of the year goes from `r min(joined %>% pull(year))` to `r max(joined %>% pull(year))`. Key variables include all the columns noted above, plus the "Na" values for the close column.
 
 
 ## Problem 2
-### Mr. Trash Wheel
+### Clean Mr. Trash Wheel dataset
 ```{r}
 mister_trash = 
   read_excel("202309 Trash Wheel Collection Data.xlsx", 
@@ -90,8 +95,8 @@ mister_trash =
 
 tail(mister_trash)
 ```
+### Clean Professor Trash Wheel dataset
 ```{r}
-# load and clean the Professor Trash Wheel
 prof_trash = 
   read_excel("202309 Trash Wheel Collection Data.xlsx", 
              sheet = "Professor Trash Wheel", range = "A2:M108") |>
@@ -103,8 +108,8 @@ prof_trash =
 
 tail(prof_trash)
 ```
+### Clean Gwynnda Trash dataset
 ```{r}
-# load and clean the Professor Trash Wheel
 gwynnda_trash = 
   read_excel("202309 Trash Wheel Collection Data.xlsx", 
              sheet = "Gwynnda Trash Wheel", range = "A2:L157") |>
@@ -116,7 +121,7 @@ gwynnda_trash =
 
 tail(gwynnda_trash)
 ```
-Now we combine those three datasets:
+Now we combine these three datasets:
 ```{r}
 trash_wheels =
   bind_rows(mister_trash, prof_trash, gwynnda_trash) |>
@@ -126,11 +131,12 @@ tail(trash_wheels)
 ```
 * There are `r nrow(trash_wheels)` rows/observations in the resulting dataset. 
 
-* Key variables include dumpster id, year-month-day as the time of the record for the 
+* Key variables include dumpster id, year-month-day as the time of the record for the trash collections, and the type of trash collected by each dumpster.
 
 * The total weight of trash collected by Professor Trash Wheel is `r sum(prof_trash %>% pull(weight_tons))` in tons.
 
 ```{r results='hide'}
+# filter the conditions for trash
 filtered_gywnnda =  
   gwynnda_trash |>
   select(year, month, cigarette_butts) |>
@@ -148,23 +154,36 @@ MCI_baseline = read_csv("MCI_baseline.csv", skip=1)
 ```
 ```{r warning=FALSE}
 MCI_cleaned = 
-  MCI_baseline |>
+  MCI_baseline |> 
   janitor::clean_names() |>
   mutate(sex = ifelse(sex==0, "Female", "Male"), 
-         apoe4 = ifelse(apoe4==0, "Non-carrier", "Carrier"),
-         age_at_onset = as.numeric(age_at_onset)) |>
-  filter(age_at_onset != "NA")
-
-head(MCI_cleaned)
+         apoe4 = ifelse(apoe4==0, "Non-carrier", "Carrier"), 
+         age_at_onset = ifelse(age_at_onset==".", 0, age_at_onset), 
+         age_at_onset = as.numeric(age_at_onset))
+MCI_cleaned
+```
+```{r message=FALSE}
+MCI_predate = MCI_cleaned |>
+  filter(current_age >= age_at_onset & age_at_onset != 0)
+MCI_predate
+```
+As seen in the above table, we exclude those whose onset age is smaller than their current age:
+```{r message=FALSE}
+MCI_cleaned = MCI_cleaned |>
+  filter(id != 72) |>
+  filter(id != 234) |>
+  filter(id != 283) |>
+  filter(id != 380)
+MCI_cleaned
 ```
 
-* I used "skip=1" parameter when importing data to exclude the first row of the because it will mess up with the column names one row below. 
+* I used "skip=1" parameter when importing data to exclude the first row of the because it will mess up with the column names one row below. I also used filter function to exclude those whose onset age is before this study.
 
 * Relevant features of the dataset include current age of participants, their gender, education in years, and the age at onset of MCI in decimal form after data cleaning.
 
-* There were originally `r nrow(MCI_baseline)` participants recruited, of these `r nrow(MCI_cleaned)` develop MCI the follow-up period. 
+* There were originally `r nrow(MCI_cleaned)` participants recruited (already excluding those who developed MCI before the study), of these `r nrow(MCI_cleaned %>% filter(age_at_onset!=0))` develop MCI the follow-up period.
 
-* The average baseline age is `r mean(MCI_cleaned %>% pull(age_at_onset))`.
+* The average baseline age is `r mean(MCI_cleaned %>% pull(current_age))`.
 
 ```{r}
 # Check the proportion of women who are APOE4 carriers
@@ -173,28 +192,43 @@ MCI_women =
   filter(sex=="Female")
 
 MCI_women_carrier = 
-  MCI_cleaned |>
-  filter(sex=="Female", apoe4=="Carrier")
+  MCI_women |>
+  filter(apoe4=="Carrier")
 ```
-
 * `r 100 * nrow(MCI_women_carrier) / nrow(MCI_women)`% of women in the study are APOE4 carriers.
 
 ### Longitudinal Study
-```{r}
+```{r message=FALSE, warning=FALSE}
 amyloid =
   read_csv("mci_amyloid.csv", skip = 1) |>
-  janitor::clean_names()
+  janitor::clean_names() |>
+  pivot_longer(
+    baseline:time_8,
+    names_to = "time", 
+    values_to = "amyloid") |>
+  mutate(amyloid = as.numeric(amyloid))
 
 head(amyloid)
 ```
 Here, I also used "skip=1" parameter to exclude the first row because it is not the column name we want. Key features include 
 
-Now we check whether some participants appear in only the baseline or amyloid datasets, and comment on your findings. 
+Now we check whether some participants appear in only the baseline or amyloid datasets:
+
+Let's first check how many are only in the MCI_cleaned/baseline dataset:
 ```{r}
-baseline_id = MCI_cleaned |> pull(id)
-amyloid_id = amyloid |> pull(study_id)
+check_id_mci = anti_join(MCI_cleaned, amyloid, by = c("id" = "study_id"))
+
+check_id_mci
 ```
-So, yes, there are many participants who appear in only the amyloid dataset, and a lot only appear in the baseline dataset.
+There are 8 participants only in the MCI_cleaned/baseline dataset.
+
+Then let's see how many participants only appear in the amyloid：
+```{r}
+check_id_amyloid = anti_join(amyloid, MCI_cleaned, by = c("study_id"="id"))
+
+head(check_id_amyloid)
+```
+There are `r nrow(check_id_amyloid)` participants only in the amyloid dataset. So, yes, there are many participants who appear in only the amyloid dataset, and a lot only appear only in the baseline dataset.
 
 Now, we combine the demographic and biomarker datasets so that only participants who appear in both datasets are retained:
 ```{r}
@@ -202,7 +236,7 @@ MCI_df = inner_join(MCI_cleaned, amyloid, by = c("id" = "study_id"))
 
 head(MCI_df)
 ```
-The resulting dataset contains `r nrow(MCI_df)` rows/observations and `r ncol(MCI_df)` columns. Key features include the study id for each participant, their current age, gender, education level in years and their age at the onset of MCI. The rest columns are measurements of biomarkers amyloid, from baseline level to the levels after different time intervals across the study.
+The resulting dataset contains `r nrow(MCI_df)` rows/observations and `r ncol(MCI_df)` columns. Key features include the study id for each participant, their current age, gender, education level in years, their age at the onset of MCI and the apoe4 indicator. The amyloid column, after cleaning, contains measurements of biomarkers amyloid, from baseline level to the levels after different time intervals across the study.
 
 Finally, we export the result as a CSV to current data directory:
 ```{r save_csv, message = FALSE}
